@@ -25,6 +25,9 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   # The field name in the event that references the log level to use.
   config :severity_field, :validate => :string, :required => false, :default => "severity"
 
+  # The field name in the event that contains the timestamp of the log message.
+  config :timestamp_field, :validate => :string, :required => false, :default => "@timestamp"
+
   # If no severity is found, the default severity level to assume.
   config :default_severity, :validate => :string, :required => false, :default => "notice"
 
@@ -54,6 +57,8 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
         if response.status
           @project_id = response.body.to_s.strip
         end
+
+
       else
         @logger.error "Unable to detect the Google Cloud project ID to which logs should be written." \
                       "Please ensure that you specify the `project_id` config parameter if not running on the Google " \
@@ -73,6 +78,7 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
       entry.severity = event.include?(@severity_field) ? event.get(@severity_field) : @default_severity
       entry.log_name = "projects/%{project}/logs/%{log_name}" % { :project => @project_id, :log_name => event.sprintf(@log_name) }
       entry.json_payload = event.to_hash
+      entry.timestamp = event.get(@timestamp_field)
 
       entries.push entry
     end
