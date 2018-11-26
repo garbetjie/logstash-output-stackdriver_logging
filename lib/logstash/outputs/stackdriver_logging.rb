@@ -29,7 +29,10 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   config :timestamp_field, :validate => :string, :required => false, :default => "@timestamp"
 
   # If no severity is found, the default severity level to assume.
-  config :default_severity, :validate => :string, :required => false, :default => "notice"
+  config :default_severity, :validate => :string, :required => false, :default => "default"
+
+  # Boolean flag indicating whether or not to remove the fields in the event that are prefixed with "@".
+  config :strip_at_fields, :validate => :boolean, :required => false, :default => false
 
   concurrency :single
 
@@ -71,14 +74,31 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   public
   # @param [Array] events
   def multi_receive(events)
+    # Do nothing if no events are received.
+    if events.length < 1
+      return
+    end
+
     entries = []
 
     events.each do |event|
       entry = Google::Apis::LoggingV2::LogEntry.new
       entry.severity = event.include?(@severity_field) ? event.get(@severity_field) : @default_severity
       entry.log_name = "projects/%{project}/logs/%{log_name}" % { :project => @project_id, :log_name => event.sprintf(@log_name) }
-      entry.json_payload = event.to_hash
       entry.timestamp = event.get(@timestamp_field)
+      entry.json_payload = event.to_hash
+
+      # Strip the "@" fields.
+      if @strip_at_fields
+        stripped = {}
+        entry.json_payload.each do |key, value|
+          unless key[0] == "@"
+            stripped[key] = value
+          end
+        end
+
+        entry.json_payload = stripped
+      end
 
       entries.push entry
     end
@@ -91,12 +111,12 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
     request.resource = resource
 
     @service.write_entry_log_entries(request) do |result, error|
-      $stdout.write("!!! STACKDRIVER !!!\n")
-      $stdout.write(result)
-      $stdout.write("\n")
-      $stdout.write(error)
-      $stdout.write("\n")
-      $stdout.write("!!! /STACKDRIVER !!!\n")
+      if error
+        @logger.error "Unable to write log entries to Stackdriver Logging."
+        @logger.error "Received this error: " + error.to_s
+      else
+        @logger.debug("Wrote %{length} entries successfully." % { :length => entries.length })
+      end
     end
   end
 end
