@@ -34,6 +34,9 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   # Boolean flag indicating whether or not to remove the fields in the event that are prefixed with "@".
   config :strip_at_fields, :validate => :boolean, :required => false, :default => false
 
+  # Array of fields to strip out before sending.
+  config :strip_fields, :validate => :array, :required => false, :default => []
+
   concurrency :single
 
   public
@@ -89,15 +92,22 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
       entry.json_payload = event.to_hash
 
       # Strip the "@" fields.
-      if @strip_at_fields
-        stripped = {}
+      if @strip_at_fields or @strip_fields.length > 0
+        filtered = {}
+
         entry.json_payload.each do |key, value|
-          unless key[0] == "@"
-            stripped[key] = value
+          if @strip_at_fields && key[0] == "@"
+            next
           end
+
+          if @strip_fields.length > 0 && @strip_fields.include?(key)
+            next
+          end
+
+          filtered[key] = value
         end
 
-        entry.json_payload = stripped
+        entry.json_payload = filtered
       end
 
       entries.push entry
