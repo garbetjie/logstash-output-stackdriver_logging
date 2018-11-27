@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.description  = ""
   s.authors = ["Geoff Garbers"]
   s.email = "geoff@garbers.co.za"
-  s.homepage = "https://github.com/garbetjie/logstash-output-stackdriver"
+  s.homepage = "https://github.com/garbetjie/logstash-output-stackdriver_logging"
   s.require_paths = %w(lib generated)
 
   # Files
