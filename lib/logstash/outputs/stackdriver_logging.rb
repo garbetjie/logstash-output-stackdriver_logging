@@ -7,7 +7,50 @@ require 'googleauth'
 require 'json'
 require 'faraday'
 
-# An example output that does nothing.
+# === Summary
+#
+# This plugin sends events to Stackdriver Logging. Events are sent in batches as they are received.
+#
+# === Environment configuration
+#
+# Logging should already be configured on your Google Cloud Platform project. However, you will need
+# to create a service account with permissions to write logs.
+#
+# === Usage
+#
+# This is an example of Logstash config for this plugin:
+#
+# [source,ruby]
+# --------------------------
+# output {
+#   stackdriver_logging {
+#     project_id => "folkloric-guru-278"    (optional) <1>
+#     key_file => "/path/to/key_file.json"  (optional) <2>
+#     log_name => ""                        (required) <3>
+#     severity_field => "severity"          (optional)
+#     timestamp_field => "@timestamp"       (optional)
+#     default_severity => "default"         (optional)
+#     strip_at_fields => false              (optional)
+#     strip_fields => []                    (optional)
+#   }
+# }
+# --------------------------
+#
+# <1> If running on Google Compute Engine, the project ID will be automatically retrieved from the metadata server. Required
+#     if not running within GCE.
+#
+# <2> If no key is provided, defaults to using https://cloud.google.com/docs/authentication/production[Application Default Credentials].
+#
+# <3> The log name can be interpolated with log data, to extract the log name from a message.
+#
+# === Considerations
+#
+# There is a cost to storing log data in Stackdriver Logging. See https://cloud.google.com/stackdriver/pricing[the pricing guide]
+# for more information on costs involved.
+#
+# All logs are stored under the `global` resource.
+#
+#
 class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   config_name "stackdriver_logging"
 
@@ -19,10 +62,11 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   # of the service account to write logs as.
   config :key_file, :validate => :path, :required => false
 
-  # The name of the log to write logs to.
+  # The name of the log to write logs to. Can be interpolated with event fields.
   config :log_name, :validate => :string, :required => true
 
-  # The field name in the event that references the log level to use.
+  # The name of the field that contains the logging severity level. If no field with this name is specified, defaults
+  # to @default_severity.
   config :severity_field, :validate => :string, :required => false, :default => "severity"
 
   # The field name in the event that contains the timestamp of the log message.
@@ -31,10 +75,11 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   # If no severity is found, the default severity level to assume.
   config :default_severity, :validate => :string, :required => false, :default => "default"
 
-  # Boolean flag indicating whether or not to remove the fields in the event that are prefixed with "@".
+  # Boolean flag indicating whether or not to remove the fields in the event that are prefixed with "@", immediately
+  # prior to sending.
   config :strip_at_fields, :validate => :boolean, :required => false, :default => false
 
-  # Array of fields to strip out before sending.
+  # Array of field names to remove from the event immediately prior to sending.
   config :strip_fields, :validate => :array, :required => false, :default => []
 
   concurrency :single
