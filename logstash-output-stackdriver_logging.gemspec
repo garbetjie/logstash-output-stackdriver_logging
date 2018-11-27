@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-output-stackdriver_logging'
-  s.version = '0.1.0'
+  s.version = '0.1.1'
   s.licenses = ['MIT']
   s.summary = "Writes payloads to Stackdriver Logging."
   s.description  = ""
