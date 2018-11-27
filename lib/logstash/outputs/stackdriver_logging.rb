@@ -101,11 +101,11 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
     # project_id is not defined. Try to extract it from teh metadata server.
     unless @project_id
       if Google::Auth::GCECredentials.on_gce?
-        connection = Faraday::Connection.new("http://169.254.169.254/computeMetadata/v1/", { :headers => headers })
+        connection = Faraday::Connection.new("http://169.254.169.254/computeMetadata/v1/")
         connection.headers = { "Metadata-Flavor": "Google" }
         response = connection.get "project/project-id"
 
-        if response.status
+        if response.status == 200
           @project_id = response.body.to_s.strip
         end
 
