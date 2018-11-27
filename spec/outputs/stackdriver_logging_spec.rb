@@ -1,12 +1,12 @@
 # encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
-require "logstash/outputs/example"
+require "logstash/outputs/stackdriver_logging"
 require "logstash/codecs/plain"
 require "logstash/event"
 
-describe LogStash::Outputs::Example do
+describe LogStash::Outputs::StackdriverLogging do
   let(:sample_event) { LogStash::Event.new }
-  let(:output) { LogStash::Outputs::Example.new }
+  let(:output) { LogStash::Outputs::StackdriverLogging.new }
 
   before do
     output.register
