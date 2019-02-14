@@ -23,5 +23,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-codec-plain"
   s.add_runtime_dependency "google-api-client"
   s.add_runtime_dependency "googleauth"
+  s.add_runtime_dependency "faraday"
   s.add_development_dependency 'logstash-devutils'
 end
