@@ -82,7 +82,7 @@ class LogStash::Outputs::StackdriverLogging < LogStash::Outputs::Base
   # Array of field names to remove from the event immediately prior to sending.
   config :strip_fields, :validate => :array, :required => false, :default => []
 
-  concurrency :single
+  concurrency :shared
 
   public
   def register
